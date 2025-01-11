@@ -34,6 +34,13 @@ static int dc_send(Window win) {
     return sz < 0 ? -1 : 0;
 }
 
+// Receives a packet
+static int dc_recv(Window win) {
+    ssize_t sz = recv(win->sock, win->buffer, DC_SOCK_BUFFER_SIZE, 0);
+    win->used_buf = sz;
+    return sz < 0 ? -1 : 0;
+}
+
 // Do some formatting then fills the buffer and send the packet
 static void dc_sprintf(Window win, const char *fmt, ...) {
     va_list args;
@@ -58,6 +65,28 @@ Window dc_create_window(const char *addr, const int port) {
     win->used_buf = 0;
 
     return win;
+}
+
+// Receives response from server and decodes it in a Response struct
+// Returns -1 on failure
+int dc_receive_response(Window win, Response *resp) {
+    if (dc_recv(win) < 0) return -1;
+    
+    win->buffer[win->used_buf - 2] = 0;
+    char *typ = win->buffer;
+    char *arg = strchr(win->buffer, ' ') + 1;
+    if (arg) arg[-1] = 0;
+
+    if (strcmp(typ, "OK") == 0)
+        resp->type = DC_RESP_OK;
+    else if (strcmp(typ, "ERR") == 0) {
+        resp->type = DC_RESP_ERR;
+        strcpy(resp->error, arg);
+    } else {
+        resp->type = DC_RESP_UNKNOWN_COMMAND;
+    }
+
+    return 0;
 }
 
 // Disconnects and destroys window on a DrawServ server
@@ -99,4 +128,9 @@ void dc_set_viewport(Window win, double x1, double y1, double x2, double y2) {
 // Ellipse
 void dc_draw_oval(Window win, double x1, double y1, double x2, double y2) {
     dc_sprintf(win, "ELLIPSE %lf %lf %lf %lf\r\n", x1, y1, x2, y2);
+}
+
+// Text
+void dc_write_text(Window win, const char *str, double x, double y) {
+    dc_sprintf(win, "TEXT %lf %lf %s\r\n", x, y, str);
 }

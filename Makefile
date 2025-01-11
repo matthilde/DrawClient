@@ -1,12 +1,18 @@
 BIN = libdrawcli.so
 CC = gcc
-CFILES = drawcli.c
-CFLAGS = -Wall -Wextra -std=c99 -shared
+CFILES = drawcli.c turtle.c
+CFLAGS = -Wall -Wextra -std=c99
+BIN_CFLAGS = $(CFLAGS) -fPIC -shared
+DEMOS_CFLAGS = $(CFLAGS) -L. -ldrawcli -lm
+DEMOS = demos/viewer demos/turtle
+
+all: $(BIN) $(DEMOS)
 
 $(BIN): $(CFILES)
-	$(CC) -o $(BIN) $(CFLAGS) $(CFILES)
+	$(CC) -o $(BIN) $(BIN_CFLAGS) $(CFILES)
 
-.PHONY: testing
+$(DEMOS): %: %.c
+	$(CC) -o $@ $(DEMOS_CFLAGS) $<
 
-testing: $(BIN)
-	$(CC) -o test -L. -ldrawcli test.c
+clear:
+	rm -f $(DEMOS) $(BIN)
