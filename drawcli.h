@@ -26,10 +26,6 @@ typedef struct dc_response {
     char error[DC_ERR_BUFFER_SIZE];
 } Response;
 
-typedef struct dc_color {
-    unsigned char r, g, b;
-} Color;
-
 //// Functions
 
 // drawcli.c
